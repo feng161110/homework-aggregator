@@ -1,0 +1,27 @@
+# 雨课堂登录服务（api/ykt）依赖
+# 安装：pip install -r requirements.txt
+# 启动：python ykt_api.py   （默认 http://localhost:2002）
+#
+# 版本按开发机上实际跑通的版本锁定；其中 crack_tcaptcha 是本目录下的本地包，不用装。
+
+fastapi==0.123.2
+uvicorn[standard]==0.38.0
+requests==2.32.3
+pydantic==2.12.5
+pydantic-settings==2.15.0
+
+# 密码 RSA 加密（Crypto.Cipher.PKCS1_v1_5 / Crypto.PublicKey.RSA）
+pycryptodome==3.23.0
+
+# crack_tcaptcha 的 tdc 轨迹求解：需要 Node + jsdom 跑页面里的 JS，这部分依赖见 crack_tcaptcha/README
+httpx==0.28.1
+
+# 验证码识别（字序点选 / 图标匹配）
+onnxruntime==1.22.0
+opencv-python-headless==4.12.0.88
+pillow==10.4.0
+numpy==2.2.3
+beautifulsoup4==4.13.3
+
+# 可选：图标点选兜底识别（缺失时 icon_match 会自动跳过）
+ddddocr==1.6.1

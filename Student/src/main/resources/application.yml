@@ -1,0 +1,94 @@
+server:
+  # 对外入口是网关（8080），本服务只被网关访问，不再直接暴露给前端
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: student
+  servlet:
+    multipart:
+      max-file-size: 5MB      # 单文件上限
+      max-request-size: 5MB   # 单次请求上限
+  datasource:
+    # 本地开发默认连接；createDatabaseIfNotExist=true 可自动建库（需账号有权限）
+    url: jdbc:mysql://localhost:3306/tt_project?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 与 docker-compose.yml 里的 MYSQL_USER / MYSQL_PASSWORD 保持一致
+    username: feng
+    password: 123456
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  mail:
+    # QQ 邮箱 SMTP（SSL）。password 为 QQ 邮箱「授权码」，不是登录密码
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:jkeephappy@qq.com}
+    password: ${MAIL_PASSWORD:jqeuvbffbfkhcigh}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.socketFactory.class: javax.net.ssl.SSLSocketFactory
+      mail.smtp.socketFactory.port: 465
+      mail.smtp.timeout: 15000
+      mail.smtp.connectiontimeout: 15000
+
+jwt:
+  # 开发默认值，生产必须通过环境变量 JWT_SECRET 覆盖（HS256 要求至少 32 字节）
+  secret: ${JWT_SECRET:dev-only-secret-change-me-in-production-0123456789abcdef}
+  access-token-ttl-seconds: 1800    # 30 分钟
+  refresh-token-ttl-seconds: 604800 # 7 天
+
+app:
+  mail:
+    # false 时不真正发邮件，而是把验证码/重置链接输出到日志，便于本地联调
+    enabled: true
+    from: "大大大彬 <jkeephappy@qq.com>"
+    base-url: http://localhost:5173
+  security:
+    verification-code-ttl-minutes: 5   # 邮箱验证码 5 分钟有效
+    verification-max-attempts: 5       # 同一验证码最多尝试 5 次
+    reset-token-ttl-minutes: 30        # 重置链接令牌 30 分钟
+    reset-code-ttl-minutes: 10         # 重置密码验证码 10 分钟
+    reset-code-max-attempts: 5         # 同一重置验证码最多尝试 5 次
+    login-max-failures: 5              # 连续失败 5 次锁定
+    login-lock-minutes: 15             # 锁定 15 分钟
+    # ===== 登录参数加密（对应前端 frontend/public/1.js、2.js）=====
+    # 参数格式为「密文.时间戳(毫秒)」，与服务端双向偏差超过该秒数即返回「登录超时」
+    login-timestamp-window-seconds: 10
+    # 账号 RC4 密钥：必须与前端 2.js 里的 KEY 完全一致
+    login-account-key: "${LOGIN_ACCOUNT_KEY:jmAccount@2026#39.104}"
+    # 密码 RSA 私钥（PKCS#8 Base64），与前端 1.js 内嵌的公钥配对。
+    # 开发默认值仅供本地联调，生产必须用环境变量 LOGIN_RSA_PRIVATE_KEY 覆盖！
+    login-rsa-private-key: ${LOGIN_RSA_PRIVATE_KEY:MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5Wa96Au0yH2MIOQ4JwS3msVMq7JQDMaRLRaHIAySBdPztbQybaUXtSuTgGhpfioTBbBmlMQZ8p7rJqcQj077+8TI4+Yj5CMN6XhrAl0TMKKghO5ped1p18oGnR63JcYyJab7VmKTj853+df9rCFdylrrtP7mYJUTbLsGDwLEWYbRyFXC3z1ezqXS4wqd8BAYTNO7eo9Z3iySfWkucpBS78sdTaZPpNHvgZmCjvwj1ymWPvs6LYw0C9jx0gDX1lUFAJ7YNEByXdeItizCMLsfh0f/PBzHtrdUJfqvnH1mO2dG+k1bVB7yLg8o3wnkBW2s2jJLlSGg61rDhC/ogggEBAgMBAAECggEAEz4wbaZoIdAIZA4oWvLnZQ/75nTxWPOKbxYnmbBZ1ebja3Lq4Cepztz7rhiHrGuhJMOoVfIlDkQLrGwnpOCS77zyzd96TQCP6uBiPqR1zAxciDa77BrQFXa75zYV4NgdExcbbOmQFOpx+L0fa2lOSuNDPOZkylr0Lx1HkforaHtG2WUEvw1p294XcMCzAHFRrjd+JXJnDeWPiRyNm+5zTfzUoIyQ3a/vxHzjsH9jLpBaCp/mVAnWeHwzjixEarrRKF7lYraLOvMGTayEC3sf+YLowLK305uxe3xjekqooPimvzYK+btpJpJGQQ/FffroG+a6um51rKYEOI+r043skQKBgQDED6dMDNE7CTEoHhRlymjguIZXwd2ME7ARcl06zt46ENn25yTeoi+Xr2BjVSyQKt+BJ6r2sgO93e5hFp/cSToU6mvOx6CYwvmc7qcxicqTMUI9KB1hM/3sVGIV6GylxFYctb235tnOK/CgrYrU9JjBZB1t4FM0UULEej+8rtwQQwKBgQDyA8VaPkAlpc5pPh481bbCCrj2CtguYsd0v993IBgORfS/EESnpc3A9WaahuTOp5FSddm25Fo/jkeq0QPr2KHDBAK5Ad0n+BGraJ+axtMlA4dlzvdXLz7Xu1y8351fOWJ1E8qNVJR2pshoeUkAsRdQ6+mNbCfqzZi067FvvW8nawKBgCl/5rmCPQdx+qWzOD4Tif+HD2ij8HEl+a63tmQsRX2k833/jx5Q1iIVTSG5daVObeC4tMdjBse5oiuKzmuiVFj5BbjPKH8tRgihu2IQ+IAPfSXUx+M7ThQoCFr6x4SO+ms5TN8QTioFwvk/wpMw8uR8fH41bWc1jBxqg/M8T/hhAoGBAKt1znk8Bzhk+xMG5mdVRjC9ZgMy9awPYZ4uXgTI4SIjn91Jikp4Joihk/rAvRRIFaYlRoTTzbifddjoUm3iQeCnU8J9NpEdqG8XJZSDbo4XrPKNKiFDoLM40+AgUR9oyX+G8QcmODTDvtJ9syHhVVKIgSQnzzQESz9KiKBQxpJXAoGAWs4Cz81o7FblmW67Bu6L7Nm2upxZ9lVviGL1rGY/Ltt2f7BqVDQ8b2FMJTBvXwVMSaBSGGvaU1ORg8OWKJDjOQWAxR2z1cGASGrqhVqaiqMcdR0VAopJ1WE1J3opctKiP6A/P/0KgIwLF6HoxhWSbcShQYP7eGTz4nSJANxukr0=}
+    email-send-interval-seconds: 60    # 同一邮箱 60 秒内只发一封
+    email-daily-limit: 5               # 同一邮箱 24 小时最多 5 封
+  cors:
+    # 允许的前端来源。带 * 的是局域网通配（手机/平板通过 http://<电脑IP>:5173 访问），
+    # 同时用于 CORS 放行与重置邮件链接的来源校验
+    allowed-origins: "http://localhost:5173,http://localhost:3000,http://10.*.*.*:5173,http://192.168.*.*:5173,http://172.20.*.*:5173"
+  upload:
+    dir: uploads          # 上传文件根目录（相对项目运行目录）
+    max-avatar-size-kb: 2048   # 头像最大 2MB
+  platform:
+    # 平台密码的 AES-256-GCM 密钥，生产必须用环境变量 PLATFORM_SECRET_KEY 覆盖！
+    # 更换密钥后已入库的密码将无法解密，用户需要重新绑定平台。
+    secret-key: ${PLATFORM_SECRET_KEY:dev-only-platform-secret-change-me}
+    # 三个平台的登录服务地址（api/zhs、api/ykt、api/xxt）。
+    # 这里是服务端直连、不经网关，所以填 Python 服务自己的端口
+    zhihuishu-base: ${PLATFORM_ZHIHUISHU_BASE:http://localhost:2001}
+    yuketang-base: ${PLATFORM_YUKETANG_BASE:http://localhost:2002}
+    xuexitong-base: ${PLATFORM_XUEXITONG_BASE:http://localhost:2003}
+    connect-timeout-millis: 5000
+    read-timeout-millis: 60000   # 平台登录含滑块识别，超时给足
+  remind:
+    # 定时任务的时间基准：必须与上面 datasource 的 serverTimezone 一致，
+    # 否则 scheduled_time 与前端本地时间会差 8 小时
+    zone-id: ${REMIND_ZONE:Asia/Shanghai}
+    scan-delay-ms: ${REMIND_SCAN_DELAY_MS:30000}   # 调度器扫描间隔：到点任务最多延迟这么久发出
+    scan-batch-size: 100        # 每轮最多执行多少条
+    max-content-html: 50000     # HTML 邮件正文长度上限
+    max-content-text: 5000      # 纯文本邮件正文长度上限
+    max-subject: 200            # 邮件主题长度上限

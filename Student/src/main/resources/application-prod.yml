@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:tt_project}?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 生产环境建议通过 DB_USERNAME / DB_PASSWORD 覆盖，不要沿用默认值
+    username: ${DB_USERNAME:feng}
+    password: ${DB_PASSWORD:123456}
+  jpa:
+    hibernate:
+      ddl-auto: update
+  mail:
+    # QQ 邮箱 SMTP（SSL）。password 为 QQ 邮箱「授权码」
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.socketFactory.class: javax.net.ssl.SSLSocketFactory
+      mail.smtp.socketFactory.port: 465
+      mail.smtp.timeout: 15000
+      mail.smtp.connectiontimeout: 15000
+
+app:
+  mail:
+    enabled: true
+    from: ${MAIL_FROM:作业聚合平台 <noreply@example.com>}
+    base-url: ${APP_BASE_URL:https://your-domain.com}  # 密码重置邮件链接必须 HTTPS
+  security:
+    verification-code-ttl-minutes: ${VERIFICATION_CODE_TTL_MINUTES:5}
+    verification-max-attempts: ${VERIFICATION_MAX_ATTEMPTS:5}
+    reset-code-ttl-minutes: ${RESET_CODE_TTL_MINUTES:10}
+    reset-code-max-attempts: ${RESET_CODE_MAX_ATTEMPTS:5}
+    # 登录参数加密：生产环境必须通过环境变量提供，不要使用开发默认密钥
+    login-timestamp-window-seconds: ${LOGIN_TIMESTAMP_WINDOW_SECONDS:10}
+    login-account-key: ${LOGIN_ACCOUNT_KEY}
+    login-rsa-private-key: ${LOGIN_RSA_PRIVATE_KEY}
+  upload:
+    dir: ${UPLOAD_DIR:uploads}
+    max-avatar-size-kb: ${MAX_AVATAR_SIZE_KB:2048}
+  platform:
+    # 生产环境必须通过环境变量提供，不要使用默认值
+    secret-key: ${PLATFORM_SECRET_KEY}
+    zhihuishu-base: ${PLATFORM_ZHIHUISHU_BASE:http://localhost:2001}
+    yuketang-base: ${PLATFORM_YUKETANG_BASE:http://localhost:2002}
+    xuexitong-base: ${PLATFORM_XUEXITONG_BASE:http://localhost:2003}
+    connect-timeout-millis: ${PLATFORM_CONNECT_TIMEOUT_MILLIS:5000}
+    read-timeout-millis: ${PLATFORM_READ_TIMEOUT_MILLIS:60000}

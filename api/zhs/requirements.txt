@@ -1,0 +1,19 @@
+# 智慧树登录服务（api/zhs）依赖
+# 安装：pip install -r requirements.txt
+# 启动：python login_api.py   （默认 http://localhost:2001）
+#
+# 版本按开发机上实际跑通的版本锁定，保证服务器上装出来是同一套；
+# 需要升级时改这里再整体回归一次，不要直接 pip install -U 单个包。
+
+fastapi==0.123.2
+uvicorn[standard]==0.38.0
+requests==2.32.3
+pydantic==2.12.5
+
+# 验证码滑块识别：captcha-recognizer 是 PyPI 包（from captcha_recognizer.slider import Slider）
+captcha-recognizer==1.0.2
+pillow==10.4.0
+numpy==2.2.3
+
+# 注意：本目录下的 captcha/ 是自己写的验证码模块（from captcha.captcha import Captcha），
+# 不是 PyPI 上的 captcha 包，千万不要 pip install captcha，它会顶掉本地目录。

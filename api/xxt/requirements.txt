@@ -1,0 +1,13 @@
+# 学习通登录 / 课程作业服务（api/xxt）依赖
+# 安装：pip install -r requirements.txt
+# 启动：python login_api.py   （默认 http://localhost:2003）
+#
+# 说明：cookie 获取依赖浏览器里的油猴助手脚本（script.user.js），
+#      服务端只用 requests + BeautifulSoup 解析页面，没有其它重依赖。
+
+fastapi==0.123.2
+uvicorn[standard]==0.38.0
+requests==2.32.3
+pydantic==2.12.5
+pycryptodome==3.23.0
+beautifulsoup4==4.13.3

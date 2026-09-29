@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>作业信息聚合系统</title>
+    <meta name="description" content="作业信息聚合系统 · 学习通 / 雨课堂 / 智慧树" />
+    <link rel="icon"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23c9a77b'/%3E%3Ctext x='32' y='44' font-size='36' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E4%BD%9C%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+    <!-- 背景装饰 -->
+    <div class="bg" aria-hidden="true">
+        <span class="blob blob-1"></span>
+        <span class="blob blob-2"></span>
+        <span class="blob blob-3"></span>
+    </div>
+
+    <!-- 顶栏：品牌 + 主导航（登录后显示） -->
+    <header class="topbar">
+        <a class="brand" href="#/dashboard">
+            <span class="brand-mark">作</span>
+            <span class="brand-text">
+                <strong>作业信息聚合系统</strong>
+                <small>Homework Aggregation</small>
+            </span>
+        </a>
+        <nav class="topnav" id="topNav" hidden></nav>
+    </header>
+
+    <!-- 应用挂载点 -->
+    <main id="app" class="app" aria-live="polite"></main>
+
+    <footer class="foot">
+        <span>© 2026 作业信息聚合系统</span>
+        <span class="dot">·</span>
+        <a href="#/forgot">遇到问题？</a>
+    </footer>
+
+    <!-- 轻提示容器 -->
+    <div id="toast-root" class="toast-root"></div>
+
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>

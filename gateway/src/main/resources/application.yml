@@ -1,0 +1,60 @@
+server:
+  # 对外唯一入口。前端默认指向 8080；Java 后端让到 8081，三个平台服务在 2001-2003
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      # 浏览器与网关不同源时才用得到（开发走 Vite 代理、生产走 Nginx 同源转发都碰不到这里）
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: false
+      httpclient:
+        connect-timeout: 5000
+        # 平台登录含滑块识别，读超时给足，与 Java 后端的设置保持一致
+        response-timeout: 60s
+      routes:
+        # 平台服务必须排在下面的 /api/** 之前：网关按声明顺序匹配，先命中先转发。
+        # 剥掉 /api/xx 两级前缀再转发：
+        #   /api/zhs/api/login/password → http://localhost:2001/api/login/password
+        #   /api/xxt/login              → http://localhost:2003/login
+        - id: platform-zhihuishu
+          uri: ${ZHIHUISHU_BASE:http://localhost:2001}
+          predicates:
+            - Path=/api/zhs/**
+          filters:
+            - StripPrefix=2
+        - id: platform-yuketang
+          uri: ${YUKETANG_BASE:http://localhost:2002}
+          predicates:
+            - Path=/api/ykt/**
+          filters:
+            - StripPrefix=2
+        - id: platform-xuexitong
+          uri: ${XUEXITONG_BASE:http://localhost:2003}
+          predicates:
+            - Path=/api/xxt/**
+          filters:
+            - StripPrefix=2
+        # Java 后端：业务接口（/api/auth、/api/platform 等）
+        - id: student-api
+          uri: ${BACKEND_BASE:http://localhost:8081}
+          predicates:
+            - Path=/api/**
+        # Java 后端：上传的头像等静态文件
+        - id: student-uploads
+          uri: ${BACKEND_BASE:http://localhost:8081}
+          predicates:
+            - Path=/uploads/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
