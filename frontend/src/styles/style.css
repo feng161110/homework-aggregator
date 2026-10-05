@@ -4172,6 +4172,184 @@ html::-webkit-scrollbar-button,
     .adm-row { grid-template-columns: 1fr; align-items: flex-start; }
     .adm-actions { justify-content: flex-start; }
 }
+
+/* ==================== 移动端适配（手机） ====================
+   断点约定：≤720px 窄屏 / ≤640px 手机 / ≤480px 小屏 / ≤380px 极窄屏。
+   各模块自己的 @media 仍然生效，本段放在文件最后，同权重下优先。
+   这里只补之前没覆盖到的：安全区、iOS 输入框缩放、横向溢出、模态内部换行。 */
+
+/* 横向安全网：任何一处没算准的宽度都不该让整页能左右拖动 */
+html, body { overflow-x: hidden; }
+
+/* 刘海屏 / 底部横条：贴边的元素留出安全距离（不支持 env() 的浏览器会丢掉该声明，沿用原值） */
+.topbar {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+}
+.foot {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+.app {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+}
+.rmo-mask {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+/* 长邮箱 / 长 IP / 长标题：允许在容器内断行，别把卡片顶宽（overflow-wrap 会被子元素继承） */
+.adm-row, .device-item, .rmo-entry, .rmo-job, .hw-card, .course-card, .info-item, .adm-session {
+    overflow-wrap: anywhere;
+}
+
+/* ---------- ≤720px：导航不再挤成一条 ---------- */
+@media (max-width: 720px) {
+    .brand, .brand-text { min-width: 0; }
+    .brand-text strong {
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* 481–720px 这段原来没有降级：品牌 + 4 个导航项 + 头像会顶出屏幕。
+       改成整行可横向滑动，滑动条藏起来但滑动本身保留。 */
+    .topnav {
+        width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .topnav::-webkit-scrollbar { display: none; }
+    .topnav a { padding: 6px 10px; font-size: 13.5px; }
+}
+
+/* ---------- ≤640px：手机 ---------- */
+@media (max-width: 640px) {
+    /* 表单控件 16px 防 iOS 缩放已经在上面那段处理过了，这里不重复声明。
+
+       只补上面没覆盖到的触控目标：提醒页的胶囊、管理页的状态筛选 */
+    .rmo-chip { min-height: 34px; }
+    .adm-filter { min-height: 34px; }
+
+    /* 模态：铺满可用宽度，底部按钮允许换行 */
+    .rmo-modal {
+        max-height: 92dvh;          /* dvh：Safari 地址栏收放时高度才算得对 */
+        padding: 14px 14px 12px;
+        border-radius: 18px;
+    }
+    .rmo-modal-foot { flex-wrap: wrap; }
+    .rmo-modal-foot .rmo-foot-note { flex: 1 1 100%; order: -1; }
+
+    /* 管理页详情：设备行改成信息在上、按钮在下 */
+    .adm-session { flex-wrap: wrap; }
+    .adm-session-main { flex: 1 1 auto; min-width: 0; }
+    .adm-detail-actions .btn { flex: 1 1 auto; }
+
+    /* 时间滚轮：手机上半屏留给两列就够，别顶掉底部按钮 */
+    .adt-cols { height: 168px; }
+}
+
+/* ---------- ≤480px：小屏手机 ---------- */
+@media (max-width: 480px) {
+    .rmo-mask { padding: 8px; }
+    .rmo-modal { border-radius: 16px; max-height: 94dvh; }
+    .adm-actions .btn { flex: 1 1 calc(50% - 3px); }   /* 操作按钮排两列，别挤成一条 */
+    .adm-session .btn { flex: 1 1 100%; }
+    .adm-stats { gap: 8px; }
+    .adm-stat { padding: 10px 12px; }
+    /* 提示条往下让开刘海 / 状态栏，否则第一行会被遮住 */
+    .toast-root { top: max(14px, env(safe-area-inset-top)); }
+    .adm-stat-n { font-size: 19px; }
+}
+
+/* ---------- ≤380px：极窄屏 ---------- */
+@media (max-width: 380px) {
+    /* 标题字号上面已经用 clamp 收过了，不再重复 */
+    .rmo-toolbar, .adm-toolbar { gap: 6px; }
+    .adm-filter { padding: 6px 10px; font-size: 12px; }
+}
+
+/* ---------- 手机实测后补的三处 ---------- */
+
+/* 1) 列表模式在 480~720px 会顶出屏幕：
+      时间列固定 172px + 课程最多 180px + 4 个胶囊 ≈ 630px，
+      而"堆叠"规则原来只在 ≤480px 生效 —— 很多手机（视口约 490~520px）正好落在没覆盖的区间。
+      改成换行：时间与标题同一行，课程与胶囊自动折到下一行。 */
+@media (max-width: 720px) {
+    .hw-row {
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 8px 10px;
+        row-gap: 6px;
+        padding: 14px 16px;
+    }
+    .hw-row-time { flex: 0 0 auto; width: auto; }
+    .hw-row-title { flex: 1 1 auto; min-width: 0; }
+    .hw-row-course { flex: 0 1 auto; max-width: 100%; }
+
+    /* 2) 网格模式：原来 ≤620px 直接压成 1 列，用户明明选了 2/4 列却看着像列表。
+          手机上固定 2 列 —— 既真的是网格，又不会挤到读不了。 */
+    .hw-grid.cols-4,
+    .hw-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+    /* 3) 账号信息行：手机上不要上下堆叠 ——「登录密码 / 修改 ›」就该在同一行。
+          （这一条写在后面，会盖住上面 ≤640 的 flex-direction: column） */
+    .info-item { flex-direction: row; align-items: center; gap: 10px; }
+    .info-item .v { text-align: right; }
+}
+
+/* 4) 应用导航：9 枚图标围成一圈，在手机上相邻间距只剩几像素，标签会互相压住。
+      手机上直接排成 3 列网格，桌面端仍然是环。 */
+@media (max-width: 640px) {
+    .nav-ring {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px 10px;
+        width: 100%;
+        height: auto;
+        padding: 6px 0 2px;
+    }
+    .nav-ring::before { display: none; }          /* 环心那团光在网格里没有意义 */
+    .nav-ring-item {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none;                          /* 取消按角度旋转的定位 */
+        display: flex;
+        justify-content: center;
+    }
+    .app-tile { width: auto; height: auto; }
+}
+
+/* 5) 首页看板：.pcard-body 的 min-height 本来是给桌面端对齐三张卡用的，
+      手机上是单列堆叠，这个空档会变成三张卡各空 200 多像素 —— 一屏看不到内容。 */
+@media (max-width: 720px) {
+    .pcard { padding: 20px 18px 0; }
+    .pcard-body { min-height: 0; margin-top: 14px; }
+    .pcard-profile { gap: 12px; }
+
+    /* 6) 「来源 / 最近校验」在手机上收起来（详情页里都能看到），卡片少两行 */
+    .pcard-row.minor { display: none; }
+
+    /* 7) 大卡排版：手机上倒计时那一块要占满整行 —— 改成上下堆叠后它还缩在左下角，
+          「38 天 15:15:30」本来是这张卡的主角，应该铺开 */
+    .hw-hero-side { align-items: stretch; gap: 8px; }
+    .hw-hero-time { width: 100%; justify-content: flex-start; }
+    .hw-hero-num { font-size: clamp(38px, 13vw, 56px); }
+    .hw-hero-clock { font-size: clamp(20px, 6vw, 28px); }
+    .hw-hero-clock.solo { font-size: clamp(32px, 10vw, 46px); }
+    .hw-hero-side .hw-tag { align-self: flex-start; }
+}
+
+/* 8) 应用导航网格里不要再让图标上下浮动：
+      网格行距本来就紧，浮动会让上一行的标签被下一行盖住（「提醒」被压掉一半就是这个）。 */
+@media (max-width: 640px) {
+    .app-tile-float { animation: none; }
+    .nav-ring { gap: 22px 10px; }
+    .app-tile-name { line-height: 1.45; }
+}
 @media (max-width: 640px) {
     .rmo-head-side { align-items: flex-start; }
     .rmo-entry { gap: 10px; padding-left: 22px; }

@@ -78,6 +78,29 @@ function pickCols(value) {
     writePref(PREF_KEYS.homeworkGridCols, value);
 }
 
+/**
+ * 手机上不提供「列表」排版和「4 列」：
+ *   列表是给宽屏一屏看最多条目用的，手机上时间列 + 课程 + 4 个胶囊放不下；
+ *   4 列在手机上每张卡只剩七八十像素，读不了。
+ * 只影响「当前用哪个」——本地存的偏好原样保留，换回电脑仍然是你上次选的那套。
+ */
+const mobileQuery = window.matchMedia('(max-width: 720px)');
+const isMobile = ref(mobileQuery.matches);
+
+function syncMobile(event) {
+    isMobile.value = event.matches;
+}
+
+const layoutOptions = computed(() => (isMobile.value
+    ? LAYOUTS.filter((opt) => opt.key !== 'list')
+    : LAYOUTS));
+const colsOptions = computed(() => (isMobile.value
+    ? COLUMN_OPTIONS.filter((col) => col === 2)
+    : COLUMN_OPTIONS));
+/** 手机上即使存的是「列表」也按网格渲染，存的是 4 列也按 2 列渲染 */
+const effectiveLayout = computed(() => (isMobile.value && layout.value === 'list' ? 'grid' : layout.value));
+const effectiveCols = computed(() => (isMobile.value ? 2 : gridCols.value));
+
 // ==================== 平台数据槽位 ====================
 
 const slots = reactive(Object.fromEntries(PLATFORM_KEYS.map((key) => [key, {
@@ -108,11 +131,22 @@ onMounted(() => {
     tickTimer = setInterval(() => {
         now.value = Date.now();
     }, 1000);
+    // 老 Safari（iOS 13 及以前）的 MediaQueryList 只有 addListener，没有 addEventListener
+    if (typeof mobileQuery.addEventListener === 'function') {
+        mobileQuery.addEventListener('change', syncMobile);
+    } else if (typeof mobileQuery.addListener === 'function') {
+        mobileQuery.addListener(syncMobile);
+    }
 });
 
 onUnmounted(() => {
     if (tickTimer) {
         clearInterval(tickTimer);
+    }
+    if (typeof mobileQuery.removeEventListener === 'function') {
+        mobileQuery.removeEventListener('change', syncMobile);
+    } else if (typeof mobileQuery.removeListener === 'function') {
+        mobileQuery.removeListener(syncMobile);
     }
 });
 
@@ -336,15 +370,17 @@ const { hintText, hintTitle } = useFetchHint(hintTs);
             <!-- 排版切换：选中的会记在本地，下次进来直接用 -->
             <div class="view-bar">
                 <div class="view-switch" role="group" aria-label="选择排版">
-                    <button v-for="opt in LAYOUTS" :key="opt.key" type="button"
-                            :class="{ active: layout === opt.key }" :aria-pressed="layout === opt.key"
+                    <button v-for="opt in layoutOptions" :key="opt.key" type="button"
+                            :class="{ active: effectiveLayout === opt.key }"
+                            :aria-pressed="effectiveLayout === opt.key"
                             @click="pickLayout(opt.key)">{{ opt.label }}</button>
                 </div>
 
-                <!-- 网格排版才需要：每行放几张 -->
-                <div v-if="layout === 'grid'" class="view-switch" role="group" aria-label="选择每行卡片数">
-                    <button v-for="col in COLUMN_OPTIONS" :key="col" type="button"
-                            :class="{ active: gridCols === col }" :aria-pressed="gridCols === col"
+                <!-- 网格排版才需要：每行放几张。手机上固定 2 列，切换器就不出现了 -->
+                <div v-if="effectiveLayout === 'grid' && colsOptions.length > 1" class="view-switch"
+                     role="group" aria-label="选择每行卡片数">
+                    <button v-for="col in colsOptions" :key="col" type="button"
+                            :class="{ active: effectiveCols === col }" :aria-pressed="effectiveCols === col"
                             @click="pickCols(col)">{{ col }} 列</button>
                 </div>
             </div>
@@ -493,14 +529,14 @@ const { hintText, hintTitle } = useFetchHint(hintTs);
             </div>
 
             <!-- 网格：每行 2 列还是 4 列由用户选，卡片本身不变 -->
-            <div v-else-if="visible.length && layout === 'grid'" class="hw-grid"
-                 :class="`cols-${gridCols}`">
+            <div v-else-if="visible.length && effectiveLayout === 'grid'" class="hw-grid"
+                 :class="`cols-${effectiveCols}`">
                 <HomeworkCard v-for="item in visible" :key="item.key" :item="item" :now="now"
                               :estimate-hint="ESTIMATE_HINT" />
             </div>
 
             <!-- 列表：一屏看最多 -->
-            <div v-else-if="visible.length && layout === 'list'" class="hw-rows">
+            <div v-else-if="visible.length && effectiveLayout === 'list'" class="hw-rows">
                 <button v-for="item in visible" :key="item.key" type="button" class="hw-row"
                         :class="{ off: !hasLink(item) }" :title="rowTitle(item, now)"
                         @click="openItem(item, now)">

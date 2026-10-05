@@ -127,10 +127,11 @@ onMounted(() => cred.ensureValid({ silent: true }));
                     <div v-if="extra" class="pcard-row">
                         <span class="k">{{ extra.label }}</span><span class="v">{{ extra.value }}</span>
                     </div>
-                    <div v-if="cred.bound.value" class="pcard-row">
+                    <!-- 这两行在手机上收起来（详情页里都有），避免卡片拉得太长 -->
+                    <div v-if="cred.bound.value" class="pcard-row minor">
                         <span class="k">来源</span><span class="v">{{ sourceLabel }}</span>
                     </div>
-                    <div v-if="cred.bound.value" class="pcard-row">
+                    <div v-if="cred.bound.value" class="pcard-row minor">
                         <span class="k">最近校验</span><span class="v">{{ lastChecked }}</span>
                     </div>
                 </div>
