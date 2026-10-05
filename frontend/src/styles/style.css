@@ -104,7 +104,13 @@ body {
 /* 个人中心入口：一枚圆形头像（选择器带 .topnav a 是为了盖住上面通用导航项的内边距） */
 .topnav a.topnav-me {
     display: grid; place-items: center;
+    /* flex: 0 0 auto —— 顶栏变窄时导航项之间会互相挤，默认的 flex-shrink: 1
+       会把头像的宽度从 38px 一路压到二十几像素，配上 border-radius: 50%
+       就变成一个扁椭圆。这里明确「不参与收缩」。
+       aspect-ratio 兜底：万一处处只改了宽度，它也保持 1:1 的圆。 */
+    flex: 0 0 auto;
     width: 38px; height: 38px;
+    aspect-ratio: 1 / 1;
     margin-left: 4px;
     padding: 0;
     border-radius: 50%;
@@ -409,8 +415,10 @@ body {
 .pcard-state.warn { color: var(--muted); background: rgba(139, 129, 120, 0.12); }
 .pcard-state.bad { color: #a32024; background: var(--danger-soft); }
 
-/* 信息面板：固定最小高度并垂直居中，三张卡片高度一致 */
-.pcard-body { display: grid; align-items: center; min-height: 212px; margin-top: 22px; }
+/* 信息面板：只做垂直居中，不再固定最小高度。
+   那个 212px（加上之前给宽屏补的 901px 覆盖）就是手机卡片里那块空白大坑，已撤销。
+   PC 端三张卡仍然等高 —— 靠 .board-grid 的 align-items: stretch 撑着，不靠这里撑。 */
+.pcard-body { display: grid; align-items: center; margin-top: 22px; }
 
 .pcard-profile { display: flex; align-items: center; gap: 16px; }
 .pcard-avatar {
@@ -517,7 +525,11 @@ body {
 
 /* 品牌标现在是「应用导航」入口：可点、有悬停反馈，在导航页时描金 */
 .brand-mark {
+    /* 与顶栏头像同一个坑：它是 .brand 的 flex 子项，顶栏变窄时会被压成窄条。
+       logo 一旦不是正方形，圆角就不均匀了，所以也不参与收缩。 */
+    flex: 0 0 auto;
     width: 44px; height: 44px;
+    aspect-ratio: 1 / 1;
     display: grid; place-items: center;
     border-radius: 14px;
     overflow: hidden; /* 图片按圆角裁切 */
@@ -2396,8 +2408,8 @@ input.invalid { border-color: var(--danger); box-shadow: 0 0 0 4px var(--danger-
 @media (max-width: 720px) {
     .board-grid { grid-template-columns: 1fr; }
     .pcard-body { min-height: 0; }
-    .msgbar { flex-wrap: wrap; padding: 12px 13px; gap: 10px; }
-    .msg-job { flex-basis: 168px; width: 168px; }
+    /* 作业栏保持单行、不换行：宽度由内部横滑承担（见文件末尾的移动端覆盖块） */
+    .msgbar { padding: 12px 13px; gap: 10px; }
 }
 
 /* 窄屏：导航更紧凑 */
@@ -2772,8 +2784,7 @@ input.invalid { border-color: var(--danger); box-shadow: 0 0 0 4px var(--danger-
     .pcard-logo svg { width: 22px; height: 22px; }
     .pcard-id h2 { font-size: 20px; }
 
-    /* 消息带卡片与顶栏控件再收一档 */
-    .msg-job { flex-basis: 156px; width: 156px; }
+    /* 消息带卡片不压缩宽度（保持原宽），只让内部横滑 */
     .topnav a.topnav-me { width: 34px; height: 34px; }
 
     .facet-body { padding: 8px 10px 12px; }
@@ -2786,7 +2797,6 @@ input.invalid { border-color: var(--danger); box-shadow: 0 0 0 4px var(--danger-
     .app-tile-name { font-size: 12.5px; }
 
     .view-switch button { padding: 6px 10px; }
-    .msg-job { flex-basis: 146px; width: 146px; }
     .agg-bar { border-radius: 14px; }
 }
 
@@ -4323,18 +4333,9 @@ html, body { overflow-x: hidden; }
     .app-tile { width: auto; height: auto; }
 }
 
-/* 5) 首页看板：.pcard-body 的 min-height 本来是给桌面端对齐三张卡用的，
-      手机上是单列堆叠，这个空档会变成三张卡各空 200 多像素 —— 一屏看不到内容。 */
+/* 5) 大卡排版：手机上倒计时那一块要占满整行 —— 改成上下堆叠后它还缩在左下角，
+      「38 天 15:15:30」本来是这张卡的主角，应该铺开 */
 @media (max-width: 720px) {
-    .pcard { padding: 20px 18px 0; }
-    .pcard-body { min-height: 0; margin-top: 14px; }
-    .pcard-profile { gap: 12px; }
-
-    /* 6) 「来源 / 最近校验」在手机上收起来（详情页里都能看到），卡片少两行 */
-    .pcard-row.minor { display: none; }
-
-    /* 7) 大卡排版：手机上倒计时那一块要占满整行 —— 改成上下堆叠后它还缩在左下角，
-          「38 天 15:15:30」本来是这张卡的主角，应该铺开 */
     .hw-hero-side { align-items: stretch; gap: 8px; }
     .hw-hero-time { width: 100%; justify-content: flex-start; }
     .hw-hero-num { font-size: clamp(38px, 13vw, 56px); }
@@ -4343,12 +4344,167 @@ html, body { overflow-x: hidden; }
     .hw-hero-side .hw-tag { align-self: flex-start; }
 }
 
-/* 8) 应用导航网格里不要再让图标上下浮动：
-      网格行距本来就紧，浮动会让上一行的标签被下一行盖住（「提醒」被压掉一半就是这个）。 */
+/* 9) 看板列数完全交回媒体查询：
+      ≤1080px 两列、≤720px 单列（移动端进一步由文件末尾的 flex 单列覆盖）。
+      这里不再插入任何全局 .board-grid 规则，以免改动 720px 以上的桌面端布局。 */
+
+/* 11) 应用导航（手机网格）：
+      桌面端标签是 position:absolute 挂在图标正下方（环的定位需要它不占位），
+      换成网格后它就不占位了 —— 于是掉进下一行的图标下面被压住，看起来就是「名字显示不全」。
+      手机网格里让标签回到正常文档流，间距由 gap 统一控制；同时关掉图标浮动动画。 */
 @media (max-width: 640px) {
-    .app-tile-float { animation: none; }
-    .nav-ring { gap: 22px 10px; }
-    .app-tile-name { line-height: 1.45; }
+    .app-tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        width: auto;
+        height: auto;
+    }
+    .app-tile-name {
+        position: static;
+        transform: none;
+        white-space: nowrap;
+        font-size: 13.5px;
+        line-height: 1.3;
+    }
+    .app-tile-float { animation: none; }     /* 浮动会让图标盖住自己的标签 */
+    .nav-ring { gap: 26px 10px; }            /* 行距放开，标签有地方站 */
+}
+
+/* ==================== 卡片防溢出（手机 + 桌面都成立） ====================
+   根因：grid / flex 子项的 min-width 默认是 auto，一旦内容里有较长的
+   不可断行片段（长课程名、标签、姓名、手机号…），整个卡片会被撑到比容器还宽，
+   表现就是右侧内容被屏幕切掉、页面能左右滑。
+   做法：让容器与卡片的每一层都可收缩，文字改为卡内换行。 */
+.board-grid,
+.hw-grid,
+.hw-rows,
+.course-grid,
+.msgbar,
+.msg-jobs,
+.course-tabs { min-width: 0; max-width: 100%; }
+
+.pcard,
+.hw-card,
+.hw-hero,
+.hw-row,
+.course-card { min-width: 0; max-width: 100%; }
+
+.pcard-head,
+.pcard-body,
+.pcard-profile,
+.pcard-id,
+.pcard-rows,
+.pcard-row,
+.pcard-row .k,
+.pcard-row .v,
+.cred-rail,
+.cred-rail li,
+.cred-note,
+.rail-label,
+.pcard-foot,
+.pcard-act,
+.hw-card-main,
+.hw-hero-main,
+.hw-hero-info,
+.hw-hero-side,
+.hw-row-time,
+.hw-row-title,
+.hw-row-course,
+.course-main,
+.course-name { min-width: 0; }
+
+/* 这些文字允许在卡内断行，而不是把卡片顶宽 */
+.pcard-id h2,
+.pcard-id span,
+.pcard-row .v,
+.hw-row-title,
+.hw-row-course,
+.course-name,
+.course-title { overflow-wrap: anywhere; }
+
+/* ==================== 移动端覆盖块 ====================
+   按给定规格原样落地，不再有任何自定义的压缩 / 隐藏 / 凑一屏：
+   ① 全局禁止横向溢出；② 顶部作业栏内部横滑、不撑开页面；
+   ③ ≤720px 平台卡片 flex 纵向单列、恢复舒适尺寸、页面正常纵向滚动。
+   未使用 position: absolute / height: 100vh / display: none / max-height 压扁卡片。 */
+
+/* 1. 全局禁止横向溢出 */
+html, body { overflow-x: hidden; }
+
+/* 2. 顶部作业栏：内部横向滚动，不能撑开页面 */
+.msgbar { flex-wrap: nowrap; min-width: 0; }
+.msg-jobs { overflow-x: auto; overflow-y: hidden; min-width: 0; padding-bottom: 8px; }
+.msg-job { flex: 0 0 188px; /* 保持原宽，不压缩 */ }
+
+/* 3. 移动端卡片：坚决竖向排列，恢复舒适尺寸，允许页面纵向滑动 */
+@media (max-width: 720px) {
+    /* 平台卡片容器：改为 flex 纵向单列 */
+    .board-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        gap: 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* 卡片本身：取消所有高度限制，占满宽度 */
+    .board-grid > * {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .pcard {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        padding: 22px 18px 0 !important; /* 恢复正常内边距 */
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* 关键修复：卡片内部主体恢复流式布局，不要固定高度居中 */
+    .pcard-body {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        min-height: 0 !important;
+        height: auto !important;
+        margin-top: 16px !important;
+    }
+
+    .pcard-profile { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .pcard-avatar { width: 76px !important; height: 76px !important; }
+    .pcard-rows { width: 100%; }
+
+    /* 进度轨恢复 2x2 排列，标签显示出来 */
+    .cred-rail { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; row-gap: 12px !important; }
+    .rail-label { display: block !important; }
+
+    /* ---- 新增：外层容器适配手机宽度 ----
+       #app → .app → .page.wide → .board-grid 这一条链全程是 width: 100%，
+       本来就是"等于视口宽度"。这里再显式锁一遍，任何一层被内容撑宽都不会把整页顶出屏幕。 */
+    html,
+    body,
+    #app,
+    .app,
+    .app.page-mode,
+    .page,
+    .page.wide {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
 }
 @media (max-width: 640px) {
     .rmo-head-side { align-items: flex-start; }
@@ -4359,4 +4515,30 @@ html, body { overflow-x: hidden; }
     .rmo-mask { padding: 10px; }
     .rmo-modal { padding: 14px; max-height: 92vh; }
     .rmo-datetime { grid-template-columns: 1fr; }
+}
+
+/* ==================== 顶栏导航：窄屏下彻底不再横向滑动 ====================
+   原来 481–720px 和 ≤480px 都是「整行可横滑」来兜住 品牌 + 4 个导航项 + 头像。
+   头像改成不参与收缩（flex: 0 0 auto）之后，那几十像素的溢出变成了一段可滑动区域，
+   于是默认位置刚好把最右边的头像切掉一半，得手动滑一下才看得全。
+   现在两件事一起做：
+     1) 字号与内边距再收一档 —— 常见手机宽度（≥360px）下一行就装得下；
+     2) 允许换行 —— 极窄屏装不下时折到第二行，而不是产生横向溢出。
+   结果：任何宽度下都没有横向滚动，导航永远从最左开始。 */
+@media (max-width: 720px) {
+    .topnav {
+        flex-wrap: wrap;
+        row-gap: 2px;
+        gap: 4px;
+        overflow-x: visible;          /* 不再是滚动容器，滑不动 */
+        overscroll-behavior-x: none;
+    }
+    .topnav a { padding: 6px 9px; font-size: 13px; }
+}
+
+/* ≤480px：再收一档，保证「4 个导航项 + 头像」在一行内放得下 */
+@media (max-width: 480px) {
+    .topnav { gap: 3px; }
+    .topnav a { padding: 6px 7px; font-size: 12.5px; }
+    .topnav a.topnav-me { width: 32px; height: 32px; margin-left: 2px; }
 }
